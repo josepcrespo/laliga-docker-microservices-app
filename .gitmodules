@@ -1,0 +1,6 @@
+[submodule "nuxt-frontend"]
+	path = nuxt-frontend
+	url = https://github.com/josepcrespo/laliga-nuxt-crud-frontend-demo
+[submodule "symfony-api"]
+	path = symfony-api
+	url = https://github.com/josepcrespo/symfony-5-http-cached-rest-api

@@ -1,0 +1,76 @@
+version: '3.8'
+services:
+  vue:
+    build: 
+      context: ./nuxt-frontend/
+      dockerfile: .docker/node/Dockerfile
+    container_name: vue
+    depends_on:
+      - php
+    image: nuxt-frontend
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    volumes:
+      - ./nuxt-frontend:/usr/src/nuxt-app
+      - /usr/src/nuxt-app/node_modules
+
+  php:
+    build:
+      context: ./symfony-api/
+      dockerfile: .docker/php/Dockerfile
+    container_name: php
+    # Instead of using Caddy, we can consume the API without SSL (http only)
+    # command: php -S 0.0.0.0:9000 public/index.php
+    depends_on:
+      - mailhog
+      - postgres
+    env_file:
+      - ./symfony-api/.env
+    image: symfony-api
+    ports:
+      - 9000:9000
+    restart: unless-stopped
+    volumes:
+      - ./symfony-api:/var/www
+    
+  # I can't make Caddy running well… :'(
+  caddy:
+    container_name: caddy
+    env_file:
+      - ./symfony-api/.env
+    image: caddy:2.3.0-alpine
+    ports:
+      - 80:80
+      - 443:443
+    restart: unless-stopped
+    volumes:
+      - ./symfony-api:/var/www
+      - ./symfony-api/.docker/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - CaddyConfig:/config
+      - CaddyData:/data
+
+  postgres:
+    container_name: postgres
+    env_file:
+      - ./symfony-api/.env
+    hostname: postgres
+    image: postgres:13.1-alpine
+    ports:
+      - 5432:${POSTGRES_PORT:-5432}
+    restart: unless-stopped
+    volumes:
+      - PostgresData:/var/lib/postgresql/data
+  
+  mailhog:
+    container_name: mailhog
+    image: 'mailhog/mailhog:latest'
+    ports:
+      - 8025:8025
+      - 1025:1025
+    restart: always
+
+volumes:
+  PostgresData:
+  CaddyConfig:
+  CaddyData:
